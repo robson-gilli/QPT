@@ -1,0 +1,1 @@
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="ActiveMQProducerWCF.ActiveMQProducerService" CodeBehind="ActiveMQProducerService.svc.cs" %>
