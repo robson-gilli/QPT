@@ -51,32 +51,43 @@ namespace ActiveMQHandler
 
         public Tuple<string,string>ReadMessage(string messageId)
         {
+            ActiveMQConnectionManager cm = new ActiveMQConnectionManager(_queueUrl, _queueName);
             Tuple<string,string> message;
-            using (IConnection connection = _factory.CreateConnection())
-            using (ISession session = connection.CreateSession())
+
+            ActiveMQHandler.ActiveMQConnectionManager.ConnectionData cd = cm.getConnection();
+            IConnection connection = cd.iconnection;
+            try
             {
-                IDestination destination = SessionUtil.GetDestination(session, "queue://" + _queueName);
-
-                string selector = messageId == string.Empty ? "" : "JMSCorrelationID = '" + messageId + "'";
-                using (IMessageConsumer consumer = selector.Equals(string.Empty) ? session.CreateConsumer(destination) : session.CreateConsumer(destination, selector, false))
+                //using (IConnection connection = _factory.CreateConnection())
+                using (ISession session = connection.CreateSession())
                 {
-                    // Start the connection so that messages will be processed.
-                    connection.Start();
+                    IDestination destination = SessionUtil.GetDestination(session, "queue://" + _queueName);
 
-                    // Consume a message
-                    ITextMessage textMessage = consumer.Receive(new TimeSpan(0, 0, 2)) as ITextMessage;
-
-                    if (textMessage == null)
+                    string selector = messageId == string.Empty ? "" : "JMSCorrelationID = '" + messageId + "'";
+                    using (IMessageConsumer consumer = selector.Equals(string.Empty) ? session.CreateConsumer(destination) : session.CreateConsumer(destination, selector, false))
                     {
-                        message = Tuple.Create<string, string>(null, "No messages found");
-                    }
-                    else
-                    {
-                        message = Tuple.Create<string, string>(textMessage.NMSCorrelationID, textMessage.Text);
-                    }
+                        // Start the connection so that messages will be processed.
+                        connection.Start();
 
-                    connection.Close();
+                        // Consume a message
+                        ITextMessage textMessage = consumer.Receive(new TimeSpan(0, 0, 2)) as ITextMessage;
+
+                        if (textMessage == null)
+                        {
+                            message = Tuple.Create<string, string>(null, "No messages found");
+                        }
+                        else
+                        {
+                            message = Tuple.Create<string, string>(textMessage.NMSCorrelationID, textMessage.Text);
+                        }
+
+                        connection.Stop();
+                    }
                 }
+            }
+            finally
+            {
+                cm.ReleaseConnection(cd);
             }
             return message;
         }

@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActiveMQClient.cs" />
+    <Compile Include="ActiveMQConnectionManager.cs" />
     <Compile Include="ActiveMQListener.cs" />
     <Compile Include="ActiveMQManager.cs" />
     <Compile Include="ActiveMQReader.cs" />

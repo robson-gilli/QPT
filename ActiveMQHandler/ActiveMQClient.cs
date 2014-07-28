@@ -20,7 +20,7 @@ namespace ActiveMQHandler
         {
             _queueUrl = queueUrl;
             _queueName = queueName;
-            _connecturi = new Uri("activemq:tcp://" + queueUrl + "?keepAlive=true&randomize=false&wireFormat.maxInactivityDuration=0&nms.prefetchPolicy.all=1000");
+            _connecturi = new Uri("activemq:tcp://" + queueUrl + "?keepAlive=true&randomize=false&wireFormat.maxInactivityDuration=0&nms.prefetchPolicy.all=10000");
             _factory = new NMSConnectionFactory(_connecturi);
         }
     }

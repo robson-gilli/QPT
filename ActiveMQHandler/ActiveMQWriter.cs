@@ -24,7 +24,9 @@ namespace ActiveMQHandler
         /// <param name="id"></param>
         public void WriteMessageToQueue(string message, string id, bool persist)
         {
-            using (IConnection connection = _factory.CreateConnection())
+            ActiveMQConnectionManager cm = new ActiveMQConnectionManager(_queueUrl, _queueName);
+            ActiveMQHandler.ActiveMQConnectionManager.ConnectionData cd = cm.getConnection();
+            IConnection connection = cd.iconnection;
             using (ISession session = connection.CreateSession())
             {
                 IDestination destination = SessionUtil.GetDestination(session, "queue://" + _queueName);
@@ -42,9 +44,10 @@ namespace ActiveMQHandler
                     request.NMSCorrelationID = id;
                     request.NMSTimeToLive = new TimeSpan(0, 5, 0);
                     producer.Send(request);
-                    connection.Close();
+                    connection.Stop();
                 }
             }
+            cm.ReleaseConnection(cd);
         }
 
         public async Task WriteMessageListToQueueAsync(List<Tuple<string, string>> messageList, bool persist)
@@ -88,35 +91,46 @@ namespace ActiveMQHandler
 
         public void WriteMessageListToQueue(List<Tuple<string, string>> messageList, bool persist)
         {
-            using (IConnection connection = _factory.CreateConnection())
-            using (ISession session = connection.CreateSession())
+            try
             {
-                IDestination destination = SessionUtil.GetDestination(session, "queue://" + _queueName);
-                using (IMessageProducer producer = session.CreateProducer(destination))
+                ActiveMQConnectionManager cm = new ActiveMQConnectionManager(_queueUrl, _queueName);
+                ActiveMQHandler.ActiveMQConnectionManager.ConnectionData cd = cm.getConnection();
+                IConnection connection = cd.iconnection;
+                using (ISession session = connection.CreateSession())
                 {
-                    // Start the connection so that messages will be processed.
-                    connection.Start();
-                    if (persist)
-                        producer.DeliveryMode = MsgDeliveryMode.Persistent;
-                    else
-                        producer.DeliveryMode = MsgDeliveryMode.NonPersistent;
-
-
-                    ITextMessage request;
-                    List<Task> tList = new List<Task>();
-                    foreach (Tuple<string, string> t in messageList)
+                    IDestination destination = SessionUtil.GetDestination(session, "queue://" + _queueName);
+                    using (IMessageProducer producer = session.CreateProducer(destination))
                     {
-                        // Send a message
-                        request = session.CreateTextMessage(t.Item2);
-                        request.NMSCorrelationID = t.Item1;
-                        request.NMSTimeToLive = new TimeSpan(0, 5, 0);
-                        producer.Send(request);
+                        // Start the connection so that messages will be processed.
+                        connection.Start();
+                        if (persist)
+                            producer.DeliveryMode = MsgDeliveryMode.Persistent;
+                        else
+                            producer.DeliveryMode = MsgDeliveryMode.NonPersistent;
+
+
+                        ITextMessage request;
+                        List<Task> tList = new List<Task>();
+                        foreach (Tuple<string, string> t in messageList)
+                        {
+                            // Send a message
+                            request = session.CreateTextMessage(t.Item2);
+                            request.NMSCorrelationID = t.Item1;
+                            request.NMSTimeToLive = new TimeSpan(0, 5, 0);
+                            producer.Send(request);
+                        }
+
+                        connection.Stop();
                     }
-
-                    connection.Close();
                 }
+                cm.ReleaseConnection(cd);
             }
-        }
+            catch (Exception e)
+            {
+                throw e;
+            }
 
+        }
+        
     }
 }

@@ -57,6 +57,10 @@ namespace ActiveMQHandler
             }
         }
 
+        /// <summary>
+        /// Cópia praticamente exata do método ITravel.Framework.ServiceBus.DispatchMessage(Message message) (solution  ITravel.Framework)
+        /// </summary>
+        /// <param name="tMessage"></param>
         private void OnMessage(IMessage receivedMsg)
         {
             if (this.OnMessageArrived != null)

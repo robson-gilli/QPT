@@ -40,15 +40,17 @@ namespace ActiveMQTesterWebApp
             bool nextMessage = true;
             int i = 0;
             int count = 0;
-            while (count <= numRequests && count <= numRequests * 10)
+            while (count <= numRequests * 100)
             {
-                Thread.Sleep(250);
+//                Thread.Sleep(100);
                 Tuple<string, string> tup = r.ReadMessage(id);
                 nextMessage = tup.Item1 != null;
                 if (nextMessage)
                 {
                     resp.Append(tup.Item1 + ", ");
                     i++;
+                    if (i >= numRequests)
+                        break;
                 }
                 count++;
             }
